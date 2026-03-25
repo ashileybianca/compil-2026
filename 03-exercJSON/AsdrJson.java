@@ -6,12 +6,21 @@ public class AsdrJson {
   
   public static final int STRING  = 301;
   public static final int NUM 	 = 302;
- 
+  public static final int ARRAY   = 303;
+  public static final int OBJECT  = 304;
+  public static final int MEMBERS = 305;
+  public static final int ELEMENTS = 306;
+  public static final int VALUE = 307;
+  public static final int MEMBERS_RESTO = 308;
+  public static final int ELEMENTS_RESTO = 309;
+  public static final int JSON = 310;
 
     public static final String tokenList[] = 
       {"STRING",
-		 "NUM"
-       };
+		 "NUM",
+       "ARRAY",
+       "OBJECT"
+      };
                                       
   /* referencia ao objeto Scanner gerado pelo JFLEX */
   private Yylex lexer;
@@ -36,11 +45,23 @@ public class AsdrJson {
    
    MEMBERS: STRING ":" VALUE
       |   STRING ":" VALUE "," MEMBERS
-   
+
+   **** Fatorando:
+   MEMBERS: STRING ":" VALUE MEMBERS_RESTO
+   MEMBERS_RESTO: "," MEMBERS
+      | vazio
+   ****
+
    ARRAY: "[" ELEMENTS "]"
    
    ELEMENTS: ELEMENTS "," VALUE
       | VALUE
+
+   **** Removendo a recursão à esquerda:
+   ELEMENTS -> VALUE ELEMENTS_RESTO
+   ELEMENTS_RESTO -> , VALUE ELEMENTS_RESTO
+      | vazio
+   ****
    
    VALUE: STRING
       | NUMBER
@@ -49,29 +70,99 @@ public class AsdrJson {
 ***/  
 
    private void Json() {
-      // TODO
+      if (laToken == ARRAY){
+         ARRAY();
+      }
+      else if (laToken == OBJECT){
+         OBJECT();
+      }
+      else {
+         yyerror("esperado token: OBJECT ou ARRAY");
+      }
    }
 
    private void OBJECT() {
-      // TODO
+      if (laToken == '{') {
+         verifica('{');
+         MEMBERS();
+         verifica('}');
+      }
+      else {
+         yyerror("esperado token: {");
+      }
    }
 
    private void ARRAY() {
-      // TODO
+      if (laToken == '[') {
+         verifica('[');
+         ELEMENTS();
+         verifica(']');
+      }
+      else {
+         yyerror("esperado token: [");
+      }
    }
 
    private void MEMBERS() {
-      // TODO
+      if (laToken == STRING) {
+         verifica(STRING);
+         verifica(':');
+         VALUE();
+         MEMBERS_RESTO();
+      }
+      else {
+         yyerror("esperado token: STRING");
+      }
+   }
+
+   private void MEMBERS_RESTO() {
+      if (laToken == ',') {
+         verifica(',');
+         MEMBERS();
+      }
+      else {
+         yyerror("esperado token: ,");
+      }
    }
 
    private void ELEMENTS() {
-      // TODO
+      if (laToken == VALUE){
+         VALUE();
+         ELEMENTS_RESTO();
+      }
+      else {
+         yyerror("esperado token: STRING, NUM, { ou [");
+      }
+   }
+
+   private void ELEMENTS_RESTO() {
+      if (laToken == ',') {
+         verifica(',');
+         VALUE();
+         ELEMENTS_RESTO();
+      }
+      else {
+         yyerror("esperado token: ,");
+      }
    }
 
    private void VALUE() {
-      // TODO
+      if (laToken == STRING) {
+         verifica(STRING);
+      }
+      else if (laToken == NUM) {
+         verifica(NUM);
+      }
+      else if (laToken == "{") {
+         OBJECT();
+      }
+      else if (laToken == "[") {
+         ARRAY();
+      }
+      else {
+         yyerror("esperado token: STRING, NUM, OBJECT ou ARRAY");
+      }
    }
-
 
   private void verifica(int expected) {
       if (laToken == expected)

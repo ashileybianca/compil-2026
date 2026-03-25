@@ -222,11 +222,14 @@ public class AsdrSample {
          else 
             parser = new  AsdrSample( new java.io.FileReader(args[0]));
 
+         // inicializa o lookahead
           parser.setDebug(false);
           laToken = parser.yylex();          
 
+         // ativa o metodo S do conjunto NT
           parser.Prog();
-     
+
+         // verifica se processou toda a entrada
           if (laToken== Yylex.YYEOF)
              System.out.println("\n\nSucesso!");
           else     
